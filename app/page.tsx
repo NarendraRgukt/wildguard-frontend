@@ -39,6 +39,7 @@ interface Alert {
 export default function Home() {
   const [map, setMap] = useState<L.Map | null>(null);
   const [animals, setAnimals] = useState<Animal[]>([]);
+  const [grouped, setGrouped] = useState<Record<string, Animal[]>>({});
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
   const [positions, setPositions] = useState<Record<string, GPSEvent | null>>({});
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -50,6 +51,13 @@ export default function Home() {
       try {
         const response = await animalsAPI.getAll();
         setAnimals(response.data.animals || []);
+        // also fetch grouped animals for sidebar
+        try {
+          const g = await animalsAPI.getGrouped();
+          setGrouped(g.data.groups || {});
+        } catch (e) {
+          console.warn('Failed to fetch grouped animals:', e);
+        }
         setLoading(false);
       } catch (error) {
         console.error('Failed to fetch animals:', error);
@@ -180,7 +188,27 @@ export default function Home() {
               map={map}
             />
           </div>
-
+          <div className="panel list-panel">
+            <h2>Animals by Species</h2>
+            <div className="grouped-list">
+              {Object.keys(grouped).length === 0 ? (
+                <p>No animals grouped</p>
+              ) : (
+                Object.entries(grouped).map(([species, items]) => (
+                  <div key={species} className="species-group">
+                    <h4>{species} ({items.length})</h4>
+                    <ul>
+                      {items.map(a => (
+                        <li key={a.id} onClick={() => setSelectedAnimal(a)} style={{ cursor: 'pointer' }}>
+                          {a.animal_code} • {a.status}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
           <div className="panel alerts-panel">
             <AlertPanel
               alerts={alerts}

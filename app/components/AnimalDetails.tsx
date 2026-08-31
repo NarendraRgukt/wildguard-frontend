@@ -76,11 +76,11 @@ const GPSHistoryList: React.FC<{ animalId: string; map?: L.Map | null }> = ({ an
 
     const fetchHistory = async () => {
       try {
-        // request a large limit and filter client-side for last 7 days
-        const res = await gpsAPI.getHistory(animalId, 1000);
-        const all: GPSEvent[] = res.data.events || [];
-        const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-        const recent = all.filter((e: GPSEvent) => new Date(e.timestamp).getTime() >= weekAgo);
+        // request only last 7 days from backend using start/end params
+        const end = new Date();
+        const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const res = await gpsAPI.getHistory(animalId, { limit: 1000, start: start.toISOString(), end: end.toISOString() });
+        const recent: GPSEvent[] = res.data.events || [];
         setEvents(recent.reverse());
 
         if (map && recent.length > 0) {

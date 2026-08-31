@@ -14,6 +14,7 @@ export const animalsAPI = {
   getAll: () => api.get('/animals'),
   getById: (id: string) => api.get(`/animals/${id}`),
   getTrajectory: (id: string) => api.get(`/animals/${id}/trajectory`),
+  getGrouped: () => api.get('/animals/grouped'),
   create: (data: any) => api.post('/animals', data),
   update: (id: string, data: any) => api.put(`/animals/${id}`, data)
 };
@@ -22,8 +23,8 @@ export const animalsAPI = {
 export const gpsAPI = {
   ingest: (data: any) => api.post('/gps', data),
   getLatest: (animalId: string) => api.get(`/gps/animal/${animalId}/latest`),
-  getHistory: (animalId: string, limit?: number) => 
-    api.get(`/gps/animal/${animalId}/history`, { params: { limit } })
+  getHistory: (animalId: string, opts?: { limit?: number; start?: string; end?: string }) => 
+    api.get(`/gps/animal/${animalId}/history`, { params: opts })
 };
 
 // Alerts API
