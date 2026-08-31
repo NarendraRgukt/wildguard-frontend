@@ -6,7 +6,7 @@ import AnimalMarker from './components/AnimalMarker';
 import AnimalDetails from './components/AnimalDetails';
 import AlertPanel from './components/AlertPanel';
 import { animalsAPI, gpsAPI, alertsAPI } from './services/api';
-import L from 'leaflet';
+import type L from 'leaflet';
 import './page.css';
 
 interface Animal {
