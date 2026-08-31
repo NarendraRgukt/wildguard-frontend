@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Map from './components/Map';
+import dynamic from 'next/dynamic';
+const Map = dynamic(() => import('./components/Map'), { ssr: false });
 import AnimalMarker from './components/AnimalMarker';
 import AnimalDetails from './components/AnimalDetails';
 import AlertPanel from './components/AlertPanel';
