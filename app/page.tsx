@@ -61,20 +61,39 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch alerts
+  // Subscribe to real-time alerts via SSE
   useEffect(() => {
-    const fetchAlerts = async () => {
-      try {
-        const response = await alertsAPI.getAll('DETECTED');
-        setAlerts(response.data.alerts || []);
-      } catch (error) {
-        console.error('Failed to fetch alerts:', error);
+    const unsubscribe = alertsAPI.subscribeToAlerts(
+      (alert) => {
+        // Add new alert to the beginning of the list
+        setAlerts(prev => {
+          // Check if alert already exists
+          const exists = prev.some(a => a.id === alert.id);
+          if (exists) {
+            return prev.map(a => a.id === alert.id ? alert : a);
+          }
+          return [alert, ...prev];
+        });
+      },
+      (error) => {
+        console.error('SSE connection error, falling back to polling:', error);
+        // Fallback to polling if SSE fails
+        const fetchAlerts = async () => {
+          try {
+            const response = await alertsAPI.getAll('DETECTED');
+            setAlerts(response.data.alerts || []);
+          } catch (error) {
+            console.error('Failed to fetch alerts:', error);
+          }
+        };
+        
+        fetchAlerts();
+        const interval = setInterval(fetchAlerts, 10000);
+        return () => clearInterval(interval);
       }
-    };
+    );
 
-    fetchAlerts();
-    const interval = setInterval(fetchAlerts, 10000);
-    return () => clearInterval(interval);
+    return () => unsubscribe();
   }, []);
 
   // Fetch latest GPS for each animal

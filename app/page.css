@@ -278,3 +278,214 @@ code {
   padding: 20px;
   font-size: 14px;
 }
+
+/* Enhanced Alert Panel */
+.alert-panel {
+  padding: 20px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.alert-panel h2 {
+  font-size: 18px;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.alert-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.alert-header:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.alert-icon {
+  font-size: 20px;
+  min-width: 24px;
+}
+
+.alert-title-section {
+  flex: 1;
+}
+
+.alert-threat {
+  font-weight: 700;
+  color: #333;
+}
+
+.alert-animal {
+  font-weight: 400;
+  color: #666;
+  font-size: 13px;
+  margin-left: 5px;
+}
+
+.alert-severity {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: white;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.alert-severity.severity-low {
+  background-color: #4caf50;
+}
+
+.alert-severity.severity-medium {
+  background-color: #ff9800;
+}
+
+.alert-severity.severity-high {
+  background-color: #ff5722;
+}
+
+.alert-severity.severity-critical {
+  background-color: #d32f2f;
+}
+
+.alert-body {
+  margin-bottom: 10px;
+  padding-left: 34px;
+}
+
+.alert-description {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.alert-metrics {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.metric-label {
+  color: #666;
+  font-weight: 500;
+}
+
+.metric-value {
+  color: #333;
+  font-weight: 600;
+}
+
+.alert-confirmations {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.confirmation {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.confirmation.cctv {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.confirmation.anomaly {
+  background-color: #fce4ec;
+  color: #c2185b;
+}
+
+.alert-details {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.investigation-section {
+  margin-bottom: 10px;
+}
+
+.investigation-section h4 {
+  font-size: 12px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.investigation-section p {
+  font-size: 12px;
+  color: #555;
+  line-height: 1.4;
+  background-color: rgba(0, 0, 0, 0.02);
+  padding: 6px;
+  border-radius: 3px;
+}
+
+.alert-info {
+  font-size: 12px;
+  color: #666;
+}
+
+.alert-info p {
+  margin: 4px 0;
+}
+
+.alert-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #999;
+  padding-left: 34px;
+  gap: 8px;
+}
+
+.acknowledge-btn {
+  background-color: #667eea;
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.acknowledge-btn:hover {
+  background-color: #5568d3;
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 6px;
+  transition: color 0.2s;
+}
+
+.expand-btn:hover {
+  color: #333;
+}

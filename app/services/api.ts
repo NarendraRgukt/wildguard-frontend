@@ -33,7 +33,32 @@ export const alertsAPI = {
   create: (data: any) => api.post('/alerts', data),
   acknowledge: (id: string) => api.post(`/alerts/${id}/acknowledge`),
   resolve: (id: string, resolution: string) => 
-    api.post(`/alerts/${id}/resolve`, { resolution })
+    api.post(`/alerts/${id}/resolve`, { resolution }),
+  
+  // Real-time SSE stream for alerts
+  subscribeToAlerts: (onAlert: (alert: any) => void, onError?: (error: any) => void): (() => void) => {
+    const eventSource = new EventSource(`${API_BASE_URL}/alerts/stream`);
+    
+    eventSource.addEventListener('message', (event) => {
+      try {
+        const alert = JSON.parse(event.data);
+        onAlert(alert);
+      } catch (e) {
+        console.error('Failed to parse alert:', e);
+      }
+    });
+    
+    eventSource.addEventListener('error', (event) => {
+      console.error('SSE connection error:', event);
+      if (onError) onError(event);
+      eventSource.close();
+    });
+    
+    // Return unsubscribe function
+    return () => {
+      eventSource.close();
+    };
+  }
 };
 
 export default api;
