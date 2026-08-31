@@ -1,0 +1,14 @@
+# Frontend-specific ignore rules
+# Node modules and build
+node_modules/
+.next/
+out/
+
+# Ignore local virtualenv if created inside frontend
+venv/
+.venv/
+venv
+
+# Env files
+.env
+.env.local
