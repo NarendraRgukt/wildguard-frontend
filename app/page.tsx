@@ -199,9 +199,11 @@ export default function Home() {
                     <h4>{species} ({items.length})</h4>
                     <ul>
                       {items.map(a => (
-                        <li key={a.id} onClick={() => setSelectedAnimal(a)} style={{ cursor: 'pointer' }}>
-                          {a.animal_code} • {a.status}
-                        </li>
+                                <li key={a.id}>
+                                  <button onClick={() => { console.log('select animal', a); setSelectedAnimal(a); }} style={{ cursor: 'pointer', background: 'none', border: 'none', padding: 0, color: '#0366d6' }}>
+                                    {a.animal_code} • {a.status}
+                                  </button>
+                                </li>
                       ))}
                     </ul>
                   </div>

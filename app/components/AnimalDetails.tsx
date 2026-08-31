@@ -33,6 +33,10 @@ const AnimalDetails: React.FC<AnimalDetailsProps> = ({ animal, onClose, map }) =
       <button onClick={onClose} className="close-btn">×</button>
       <h3>{animal.animal_code}</h3>
       <p className="small">Species: {animal.species}</p>
+      <div style={{ marginTop: 8, padding: 8, background: '#f7f7f7', borderRadius: 6 }}>
+        <strong>Debug: selected animal (raw)</strong>
+        <pre style={{ maxHeight: 160, overflow: 'auto', background: '#fff', padding: 8 }}>{JSON.stringify(animal, null, 2)}</pre>
+      </div>
       <div>
         <h4>GPS History (last 7 days)</h4>
         <GPSHistoryList animalId={animal.id} map={map} />
