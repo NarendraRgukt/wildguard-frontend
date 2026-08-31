@@ -38,6 +38,7 @@ interface Alert {
 }
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState<'map' | 'animals'>('map');
   const [map, setMap] = useState<L.Map | null>(null);
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [grouped, setGrouped] = useState<Record<string, Animal[]>>({});
@@ -148,36 +149,68 @@ export default function Home() {
   return (
     <main className="dashboard">
       <header className="header">
-        <h1>🐘 WildGuard MVP</h1>
-        <p>Wildlife Early-Warning System</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1>🐘 WildGuard MVP</h1>
+            <p>Wildlife Early-Warning System</p>
+          </div>
+          <nav style={{ display: 'flex', gap: 12 }}>
+            <button onClick={() => setActiveTab('map')} style={{ background: 'transparent', border: 'none', color: activeTab === 'map' ? '#fff' : 'rgba(255,255,255,0.8)', fontWeight: 700, cursor: 'pointer' }}>Map</button>
+            <button onClick={() => setActiveTab('animals')} style={{ background: 'transparent', border: 'none', color: activeTab === 'animals' ? '#fff' : 'rgba(255,255,255,0.8)', fontWeight: 700, cursor: 'pointer' }}>Animals</button>
+          </nav>
+        </div>
       </header>
 
       <div className="container">
         <div className="panel map-panel">
-          <Map
-            center={[12.3456, 76.5432]}
-            zoom={13}
-            onMapReady={setMap}
-          />
-          <AlertMarkerManager map={map} alerts={alerts} />
-          {animals.map(animal => (
-            (() => {
-              const pos = positions[animal.id];
-              const lat = pos ? pos.latitude : 12.3456 + (Math.random() - 0.5) * 0.1;
-              const lon = pos ? pos.longitude : 76.5432 + (Math.random() - 0.5) * 0.1;
-              // Check if there's an active alert for this animal
-              const hasAlert = alerts.some(a => a.animal_id === animal.id && a.status === 'DETECTED');
-              return (
-                <AnimalMarker
-                  key={animal.id}
-                  map={map}
-                  animal={{ ...animal, latitude: lat, longitude: lon }}
-                  alert={hasAlert}
-                  onClick={() => setSelectedAnimal(animal)}
-                />
-              );
-            })()
-          ))}
+          {activeTab === 'map' ? (
+            <>
+              <Map
+                center={[12.3456, 76.5432]}
+                zoom={13}
+                onMapReady={setMap}
+              />
+              <AlertMarkerManager map={map} alerts={alerts} />
+              {animals.map(animal => (
+                (() => {
+                  const pos = positions[animal.id];
+                  const lat = pos ? pos.latitude : 12.3456 + (Math.random() - 0.5) * 0.1;
+                  const lon = pos ? pos.longitude : 76.5432 + (Math.random() - 0.5) * 0.1;
+                  // Check if there's an active alert for this animal
+                  const hasAlert = alerts.some(a => a.animal_id === animal.id && a.status === 'DETECTED');
+                  return (
+                    <AnimalMarker
+                      key={animal.id}
+                      map={map}
+                      animal={{ ...animal, latitude: lat, longitude: lon }}
+                      alert={hasAlert}
+                      onClick={() => setSelectedAnimal(animal)}
+                    />
+                  );
+                })()
+              ))}
+            </>
+          ) : (
+            <div style={{ padding: 20 }}>
+              <h3>All Animals</h3>
+              {Object.keys(grouped).length === 0 ? (
+                <p>No animals available</p>
+              ) : (
+                Object.entries(grouped).map(([species, items]) => (
+                  <div key={species} style={{ marginBottom: 12 }}>
+                    <h4 style={{ marginBottom: 6 }}>{species} ({items.length})</h4>
+                    <ul>
+                      {items.map(a => (
+                        <li key={a.id} style={{ marginBottom: 4 }}>
+                          <button onClick={() => { setSelectedAnimal(a); setActiveTab('map'); }} style={{ background: 'none', border: 'none', color: '#0366d6', cursor: 'pointer' }}>{a.animal_code} • {a.status}</button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
         <div className="sidebar">

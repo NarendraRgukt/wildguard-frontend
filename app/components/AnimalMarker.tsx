@@ -46,8 +46,8 @@ const AnimalMarker: React.FC<AnimalMarkerProps> = ({ map, animal, onClick, alert
 
     const animalIcon = L.icon({
       iconUrl: `data:image/svg+xml,${encodeURIComponent(svg)}`,
-      iconSize: [32, 32],
-      popupAnchor: [0, -16]
+      iconSize: [24, 24],
+      popupAnchor: [0, -12]
     });
 
     // Create marker

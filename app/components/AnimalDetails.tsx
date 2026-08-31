@@ -89,9 +89,11 @@ const GPSHistoryList: React.FC<{ animalId: string; map?: L.Map | null }> = ({ an
 
         if (map && recent.length > 0) {
           const latlngs = recent.map(e => [e.latitude, e.longitude] as [number, number]);
-          polyLayer = L.polyline(latlngs, { color: 'orange' }).addTo(map);
-          // markers for history
-          markers = recent.map(e => L.marker([e.latitude, e.longitude]).addTo(map));
+          polyLayer = L.polyline(latlngs, { color: '#2b7aeb', weight: 6, opacity: 0.85 }).addTo(map);
+          // ensure polyline is visible above other layers
+          try { (polyLayer as any).bringToFront(); } catch (e) {}
+          // markers for history (smaller icons)
+          markers = recent.map(e => L.circleMarker([e.latitude, e.longitude], { radius: 4, color: '#2b7aeb', fillOpacity: 0.9 }).addTo(map));
           // fit map to bounds
           const bounds = L.latLngBounds(latlngs as any);
           map.fitBounds(bounds.pad(0.2));
