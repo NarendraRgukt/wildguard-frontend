@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 const Map = dynamic(() => import('./components/Map'), { ssr: false });
 import AnimalMarker from './components/AnimalMarker';
 import AnimalDetails from './components/AnimalDetails';
@@ -38,7 +39,7 @@ interface Alert {
 }
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'map' | 'animals'>('map');
+  // removed in-page tabs; navigation uses pages
   const [map, setMap] = useState<L.Map | null>(null);
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [grouped, setGrouped] = useState<Record<string, Animal[]>>({});
@@ -155,8 +156,8 @@ export default function Home() {
             <p>Wildlife Early-Warning System</p>
           </div>
           <nav style={{ display: 'flex', gap: 12 }}>
-            <button onClick={() => setActiveTab('map')} style={{ background: 'transparent', border: 'none', color: activeTab === 'map' ? '#fff' : 'rgba(255,255,255,0.8)', fontWeight: 700, cursor: 'pointer' }}>Map</button>
-            <button onClick={() => setActiveTab('animals')} style={{ background: 'transparent', border: 'none', color: activeTab === 'animals' ? '#fff' : 'rgba(255,255,255,0.8)', fontWeight: 700, cursor: 'pointer' }}>Animals</button>
+            <Link href="/" style={{ color: '#fff', fontWeight: 700 }}>Map</Link>
+            <Link href="/animals" style={{ color: '#fff', fontWeight: 700 }}>Animals</Link>
           </nav>
         </div>
       </header>
@@ -214,14 +215,7 @@ export default function Home() {
         </div>
 
         <div className="sidebar">
-          <div className="panel details-panel">
-            <h2>Animal Details</h2>
-            <AnimalDetails
-              animal={selectedAnimal}
-              onClose={() => setSelectedAnimal(null)}
-              map={map}
-            />
-          </div>
+          {/* Animal details moved to /animals page */}
           <div className="panel list-panel">
             <h2>Animals by Species</h2>
             <div className="grouped-list">

@@ -21,6 +21,8 @@ const AnimalMarker: React.FC<AnimalMarkerProps> = ({ map, animal, onClick, alert
 
   React.useEffect(() => {
     if (!map) return;
+    // guard: ensure map looks like a Leaflet map
+    if (typeof (map as any).addLayer !== 'function' || typeof (map as any).getPanes !== 'function') return;
 
     // Remove old marker
     if (markerRef.current) {
@@ -52,8 +54,8 @@ const AnimalMarker: React.FC<AnimalMarkerProps> = ({ map, animal, onClick, alert
 
     // Create marker
     const marker = L.marker([animal.latitude, animal.longitude], { icon: animalIcon })
-      .bindPopup(`<b>${animal.animal_code}</b><br/>${animal.species}`)
-      .addTo(map);
+      .bindPopup(`<b>${animal.animal_code}</b><br/>${animal.species}`);
+    try { marker.addTo(map); } catch (e) { console.warn('Failed to add marker to map', e); }
 
     if (onClick) {
       marker.on('click', onClick);
