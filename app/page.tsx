@@ -200,21 +200,31 @@ export default function Home() {
 // Draw alert markers on map when alerts change
 // This is outside component scope to keep map effect localized via hook
 function useAlertMarkers(map: L.Map | null, alerts: Alert[]) {
-  React.useEffect(() => {
+  useEffect(() => {
     if (!map) return;
-    const markers: L.Marker[] = [];
+    const markers: any[] = [];
+    let cancelled = false;
 
-    alerts.forEach(a => {
-      if (a.gps_location) {
-        const svg = `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><text x=\"12\" y=\"20\" font-size=\"20\" text-anchor=\"middle\">⚠</text></svg>`;
-        const icon = L.icon({ iconUrl: `data:image/svg+xml,${encodeURIComponent(svg)}`, iconSize: [28, 28], popupAnchor: [0, -14] });
-        const m = L.marker([a.gps_location.latitude, a.gps_location.longitude], { icon }).addTo(map).bindPopup(`<b>Alert:</b> ${a.threat_type} (${a.severity})`);
-        markers.push(m);
-      }
+    // Dynamically import Leaflet at runtime (client-side only)
+    import('leaflet').then((leaflet) => {
+      if (cancelled) return;
+      alerts.forEach(a => {
+        if (a.gps_location) {
+          const svg = `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><text x=\"12\" y=\"20\" font-size=\"20\" text-anchor=\"middle\">⚠</text></svg>`;
+          const icon = leaflet.icon({ iconUrl: `data:image/svg+xml,${encodeURIComponent(svg)}`, iconSize: [28, 28], popupAnchor: [0, -14] });
+          const m = leaflet.marker([a.gps_location.latitude, a.gps_location.longitude], { icon }).addTo(map).bindPopup(`<b>Alert:</b> ${a.threat_type} (${a.severity})`);
+          markers.push(m);
+        }
+      });
+    }).catch(err => {
+      console.error('Failed to load leaflet for alert markers:', err);
     });
 
     return () => {
-      markers.forEach(m => map.removeLayer(m));
+      cancelled = true;
+      markers.forEach(m => {
+        try { map.removeLayer(m); } catch (e) {}
+      });
     };
   }, [map, alerts]);
 }
