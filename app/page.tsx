@@ -40,6 +40,7 @@ export default function Home() {
   const [map, setMap] = useState<L.Map | null>(null);
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
+  const [positions, setPositions] = useState<Record<string, GPSEvent | null>>({});
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -100,9 +101,16 @@ export default function Home() {
   useEffect(() => {
     const updateGPS = async () => {
       try {
+        const newPositions: Record<string, GPSEvent | null> = { ...positions };
         for (const animal of animals) {
-          await gpsAPI.getLatest(animal.id);
+          try {
+            const resp = await gpsAPI.getLatest(animal.id);
+            newPositions[animal.id] = resp.data;
+          } catch (e) {
+            newPositions[animal.id] = null;
+          }
         }
+        setPositions(newPositions);
       } catch (error) {
         console.error('Failed to fetch GPS:', error);
       }
@@ -142,17 +150,24 @@ export default function Home() {
             zoom={13}
             onMapReady={setMap}
           />
+          <AlertMarkerManager map={map} alerts={alerts} />
           {animals.map(animal => (
-            <AnimalMarker
-              key={animal.id}
-              map={map}
-              animal={{
-                ...animal,
-                latitude: 12.3456 + (Math.random() - 0.5) * 0.1,
-                longitude: 76.5432 + (Math.random() - 0.5) * 0.1
-              }}
-              onClick={() => setSelectedAnimal(animal)}
-            />
+            (() => {
+              const pos = positions[animal.id];
+              const lat = pos ? pos.latitude : 12.3456 + (Math.random() - 0.5) * 0.1;
+              const lon = pos ? pos.longitude : 76.5432 + (Math.random() - 0.5) * 0.1;
+              // Check if there's an active alert for this animal
+              const hasAlert = alerts.some(a => a.animal_id === animal.id && a.status === 'DETECTED');
+              return (
+                <AnimalMarker
+                  key={animal.id}
+                  map={map}
+                  animal={{ ...animal, latitude: lat, longitude: lon }}
+                  alert={hasAlert}
+                  onClick={() => setSelectedAnimal(animal)}
+                />
+              );
+            })()
           ))}
         </div>
 
@@ -162,6 +177,7 @@ export default function Home() {
             <AnimalDetails
               animal={selectedAnimal}
               onClose={() => setSelectedAnimal(null)}
+              map={map}
             />
           </div>
 
@@ -179,4 +195,32 @@ export default function Home() {
       </div>
     </main>
   );
+}
+
+// Draw alert markers on map when alerts change
+// This is outside component scope to keep map effect localized via hook
+function useAlertMarkers(map: L.Map | null, alerts: Alert[]) {
+  React.useEffect(() => {
+    if (!map) return;
+    const markers: L.Marker[] = [];
+
+    alerts.forEach(a => {
+      if (a.gps_location) {
+        const svg = `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><text x=\"12\" y=\"20\" font-size=\"20\" text-anchor=\"middle\">⚠</text></svg>`;
+        const icon = L.icon({ iconUrl: `data:image/svg+xml,${encodeURIComponent(svg)}`, iconSize: [28, 28], popupAnchor: [0, -14] });
+        const m = L.marker([a.gps_location.latitude, a.gps_location.longitude], { icon }).addTo(map).bindPopup(`<b>Alert:</b> ${a.threat_type} (${a.severity})`);
+        markers.push(m);
+      }
+    });
+
+    return () => {
+      markers.forEach(m => map.removeLayer(m));
+    };
+  }, [map, alerts]);
+}
+
+// Hook usage: invoked by rendering component
+function AlertMarkerManager({ map, alerts }: { map: L.Map | null; alerts: Alert[] }) {
+  useAlertMarkers(map, alerts);
+  return null;
 }

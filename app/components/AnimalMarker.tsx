@@ -13,9 +13,10 @@ interface AnimalMarkerProps {
     longitude: number;
   };
   onClick?: () => void;
+  alert?: boolean;
 }
 
-const AnimalMarker: React.FC<AnimalMarkerProps> = ({ map, animal, onClick }) => {
+const AnimalMarker: React.FC<AnimalMarkerProps> = ({ map, animal, onClick, alert }) => {
   const markerRef = React.useRef<L.Marker | null>(null);
 
   React.useEffect(() => {
@@ -26,9 +27,25 @@ const AnimalMarker: React.FC<AnimalMarkerProps> = ({ map, animal, onClick }) => 
       map.removeLayer(markerRef.current);
     }
 
-    // Create custom icon
+    // Choose species icon (fallback to generic) and danger icon for alerts
+    const speciesEmoji = (() => {
+      const s = (animal.species || '').toLowerCase();
+      if (s.includes('elephant')) return '🐘';
+      if (s.includes('tiger')) return '🐯';
+      if (s.includes('rhino')) return '🦏';
+      if (s.includes('leopard')) return '🐆';
+      if (s.includes('bear')) return '🐻';
+      if (s.includes('deer')) return '🦌';
+      if (s.includes('wild boar') || s.includes('boar')) return '🐗';
+      return '�';
+    })();
+
+    const svg = alert
+      ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><text x="12" y="20" font-size="20" text-anchor="middle">⚠</text></svg>`
+      : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><text x="12" y="20" font-size="20" text-anchor="middle">${speciesEmoji}</text></svg>`;
+
     const animalIcon = L.icon({
-      iconUrl: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><text x="12" y="20" font-size="20" text-anchor="middle">🐘</text></svg>',
+      iconUrl: `data:image/svg+xml,${encodeURIComponent(svg)}`,
       iconSize: [32, 32],
       popupAnchor: [0, -16]
     });

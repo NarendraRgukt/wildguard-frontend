@@ -1,6 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { gpsAPI } from '../services/api';
+import L from 'leaflet';
 
 interface Animal {
   id: string;
@@ -14,9 +16,10 @@ interface Animal {
 interface AnimalDetailsProps {
   animal: Animal | null;
   onClose?: () => void;
+  map?: import('leaflet').Map | null;
 }
 
-const AnimalDetails: React.FC<AnimalDetailsProps> = ({ animal, onClose }) => {
+const AnimalDetails: React.FC<AnimalDetailsProps> = ({ animal, onClose, map }) => {
   if (!animal) {
     return (
       <div className="animal-details">
@@ -29,6 +32,11 @@ const AnimalDetails: React.FC<AnimalDetailsProps> = ({ animal, onClose }) => {
     <div className="animal-details">
       <button onClick={onClose} className="close-btn">×</button>
       <h3>{animal.animal_code}</h3>
+      <p className="small">Species: {animal.species}</p>
+      <div>
+        <h4>GPS History (last 7 days)</h4>
+        <GPSHistoryList animalId={animal.id} map={map} />
+      </div>
       <dl>
         <dt>Species:</dt>
         <dd>{animal.species}</dd>
@@ -48,3 +56,64 @@ const AnimalDetails: React.FC<AnimalDetailsProps> = ({ animal, onClose }) => {
 };
 
 export default AnimalDetails;
+
+// --- GPSHistoryList component ---
+
+interface GPSEvent {
+  latitude: number;
+  longitude: number;
+  speed?: number;
+  heading?: number;
+  timestamp: string;
+}
+
+const GPSHistoryList: React.FC<{ animalId: string; map?: L.Map | null }> = ({ animalId, map }) => {
+  const [events, setEvents] = useState<GPSEvent[]>([]);
+
+  useEffect(() => {
+    let polyLayer: L.Layer | null = null;
+    let markers: L.Marker[] = [];
+
+    const fetchHistory = async () => {
+      try {
+        // request a large limit and filter client-side for last 7 days
+        const res = await gpsAPI.getHistory(animalId, 1000);
+        const all: GPSEvent[] = res.data.events || [];
+        const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        const recent = all.filter((e: GPSEvent) => new Date(e.timestamp).getTime() >= weekAgo);
+        setEvents(recent.reverse());
+
+        if (map && recent.length > 0) {
+          const latlngs = recent.map(e => [e.latitude, e.longitude] as [number, number]);
+          polyLayer = L.polyline(latlngs, { color: 'orange' }).addTo(map);
+          // markers for history
+          markers = recent.map(e => L.marker([e.latitude, e.longitude]).addTo(map));
+          // fit map to bounds
+          const bounds = L.latLngBounds(latlngs as any);
+          map.fitBounds(bounds.pad(0.2));
+        }
+      } catch (err) {
+        console.error('Failed to fetch GPS history:', err);
+      }
+    };
+
+    fetchHistory();
+
+    return () => {
+      if (polyLayer && map) map.removeLayer(polyLayer);
+      markers.forEach(m => map?.removeLayer(m));
+    };
+  }, [animalId, map]);
+
+  if (events.length === 0) return <p>No GPS history for last 7 days.</p>;
+
+  return (
+    <div className="gps-history">
+      <ul>
+        {events.map((e, idx) => (
+          <li key={idx}>{new Date(e.timestamp).toLocaleString()} — {e.latitude.toFixed(4)}, {e.longitude.toFixed(4)}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
