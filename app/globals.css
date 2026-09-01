@@ -1,7 +1,11 @@
-html,
+﻿html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+}
+
+body {
+  margin: 0;
 }
 
 a {
@@ -9,12 +13,10 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-  body {
-    color: #fff;
-    background: #000;
-  }
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
+

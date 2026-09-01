@@ -1,8 +1,7 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import { gpsAPI } from '../services/api';
-import L from 'leaflet';
 
 interface Animal {
   id: string;
@@ -16,52 +15,8 @@ interface Animal {
 interface AnimalDetailsProps {
   animal: Animal | null;
   onClose?: () => void;
-  map?: import('leaflet').Map | null;
+  map?: any;
 }
-
-const AnimalDetails: React.FC<AnimalDetailsProps> = ({ animal, onClose, map }) => {
-  if (!animal) {
-    return (
-      <div className="animal-details">
-        <p>No animal selected</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="animal-details">
-      <button onClick={onClose} className="close-btn">×</button>
-      <h3>{animal.animal_code}</h3>
-      <p className="small">Species: {animal.species}</p>
-      <div style={{ marginTop: 8, padding: 8, background: '#f7f7f7', borderRadius: 6 }}>
-        <strong>Debug: selected animal (raw)</strong>
-        <pre style={{ maxHeight: 160, overflow: 'auto', background: '#fff', padding: 8 }}>{JSON.stringify(animal, null, 2)}</pre>
-      </div>
-      <div>
-        <h4>GPS History (last 7 days)</h4>
-        <GPSHistoryList animalId={animal.id} map={map} />
-      </div>
-      <dl>
-        <dt>Species:</dt>
-        <dd>{animal.species}</dd>
-        <dt>Collar ID:</dt>
-        <dd>{animal.collar_id || 'N/A'}</dd>
-        <dt>Status:</dt>
-        <dd>
-          <span className={`status-badge status-${animal.status.toLowerCase()}`}>
-            {animal.status}
-          </span>
-        </dd>
-        <dt>Created:</dt>
-        <dd>{new Date(animal.created_at).toLocaleString()}</dd>
-      </dl>
-    </div>
-  );
-};
-
-export default AnimalDetails;
-
-// --- GPSHistoryList component ---
 
 interface GPSEvent {
   latitude: number;
@@ -71,55 +26,140 @@ interface GPSEvent {
   timestamp: string;
 }
 
-const GPSHistoryList: React.FC<{ animalId: string; map?: L.Map | null }> = ({ animalId, map }) => {
+const formatDate = (value: string) => new Date(value).toLocaleString();
+
+const AnimalDetails: React.FC<AnimalDetailsProps> = ({ animal, onClose, map }) => {
+  if (!animal) {
+    return (
+      <div className="empty-state empty-state--details">
+        Select an animal from the registry or map to load its profile.
+      </div>
+    );
+  }
+
+  return (
+    <div className="animal-details">
+      {onClose ? (
+        <button type="button" onClick={onClose} className="close-btn" aria-label="Close selected animal">
+          x
+        </button>
+      ) : null}
+
+      <div className="animal-details__hero">
+        <div>
+          <span className="section-kicker">Profile</span>
+          <h3>{animal.animal_code}</h3>
+          <p>{animal.species}</p>
+        </div>
+        <span className={`status-pill status-pill--${animal.status.toLowerCase()}`}>{animal.status}</span>
+      </div>
+
+      <div className="detail-grid">
+        <div className="detail-card">
+          <span className="detail-card__label">Collar ID</span>
+          <strong>{animal.collar_id || 'Not assigned'}</strong>
+        </div>
+        <div className="detail-card">
+          <span className="detail-card__label">Created</span>
+          <strong>{formatDate(animal.created_at)}</strong>
+        </div>
+      </div>
+
+      <div className="history-panel">
+        <div className="history-panel__header">
+          <h4>GPS history</h4>
+          <span>Last 7 days</span>
+        </div>
+        <GPSHistoryList animalId={animal.id} map={map} />
+      </div>
+    </div>
+  );
+};
+
+const GPSHistoryList: React.FC<{ animalId: string; map?: any }> = ({ animalId, map }) => {
   const [events, setEvents] = useState<GPSEvent[]>([]);
 
   useEffect(() => {
-    let polyLayer: L.Layer | null = null;
-    let markers: L.Marker[] = [];
+    let polyLayer: any = null;
+    let markers: any[] = [];
+    let cancelled = false;
 
     const fetchHistory = async () => {
       try {
-        // request only last 7 days from backend using start/end params
         const end = new Date();
         const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const res = await gpsAPI.getHistory(animalId, { limit: 1000, start: start.toISOString(), end: end.toISOString() });
-        const recent: GPSEvent[] = res.data.events || [];
+        const response = await gpsAPI.getHistory(animalId, {
+          limit: 1000,
+          start: start.toISOString(),
+          end: end.toISOString()
+        });
+        const recent: GPSEvent[] = response.data.events || [];
         setEvents(recent.reverse());
 
         if (map && recent.length > 0) {
-          const latlngs = recent.map(e => [e.latitude, e.longitude] as [number, number]);
-          polyLayer = L.polyline(latlngs, { color: '#2b7aeb', weight: 6, opacity: 0.85 }).addTo(map);
-          // ensure polyline is visible above other layers
-          try { (polyLayer as any).bringToFront(); } catch (e) {}
-          // markers for history (smaller icons)
-          markers = recent.map(e => L.circleMarker([e.latitude, e.longitude], { radius: 4, color: '#2b7aeb', fillOpacity: 0.9 }).addTo(map));
-          // fit map to bounds
-          const bounds = L.latLngBounds(latlngs as any);
+          const L = (await import('leaflet')).default;
+          if (cancelled) {
+            return;
+          }
+
+          const latlngs = recent.map((event) => [event.latitude, event.longitude] as [number, number]);
+          polyLayer = L.polyline(latlngs, {
+            color: '#2388ff',
+            weight: 5,
+            opacity: 0.82
+          }).addTo(map);
+
+          if (typeof polyLayer?.bringToFront === 'function') {
+            polyLayer.bringToFront();
+          }
+
+          markers = recent.map((event) =>
+            L.circleMarker([event.latitude, event.longitude], {
+              radius: 4,
+              color: '#9ad0ff',
+              fillColor: '#2388ff',
+              fillOpacity: 0.95
+            }).addTo(map)
+          );
+
+          const bounds = L.latLngBounds(latlngs);
           map.fitBounds(bounds.pad(0.2));
         }
-      } catch (err) {
-        console.error('Failed to fetch GPS history:', err);
+      } catch (error) {
+        console.error('Failed to fetch GPS history:', error);
       }
     };
 
     fetchHistory();
 
     return () => {
-      if (polyLayer && map) map.removeLayer(polyLayer);
-      markers.forEach(m => map?.removeLayer(m));
+      cancelled = true;
+      if (polyLayer && map) {
+        map.removeLayer(polyLayer);
+      }
+      markers.forEach((marker) => map?.removeLayer(marker));
     };
   }, [animalId, map]);
 
-  if (events.length === 0) return <p>No GPS history for last 7 days.</p>;
+  if (events.length === 0) {
+    return <p className="empty-state empty-state--inline">No GPS history for the last 7 days.</p>;
+  }
 
   return (
     <div className="gps-history">
-      <ul>
-        {events.map((e, idx) => (
-          <li key={idx}>{new Date(e.timestamp).toLocaleString()} — {e.latitude.toFixed(4)}, {e.longitude.toFixed(4)}</li>
-        ))}
-      </ul>
+      {events.map((event, index) => (
+        <div key={`${event.timestamp}-${index}`} className="timeline-row">
+          <span className="timeline-row__dot" />
+          <div className="timeline-row__content">
+            <strong>{formatDate(event.timestamp)}</strong>
+            <span>
+              {event.latitude.toFixed(4)}, {event.longitude.toFixed(4)}
+            </span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 };
+
+export default AnimalDetails;

@@ -1,11 +1,11 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 
 interface Alert {
   id: string;
   animal_id: string;
-  species: string;
+  species?: string;
   threat_type: string;
   severity: string;
   risk_score: number;
@@ -24,143 +24,130 @@ interface AlertPanelProps {
   onAcknowledge?: (alertId: string) => void;
 }
 
+const threatLabel = (value: string) => value.replace(/_/g, ' ').toUpperCase();
+
+const threatIcon = (threatType: string) => {
+  switch (threatType.toLowerCase()) {
+    case 'railway':
+      return 'RAIL';
+    case 'village':
+    case 'human_conflict':
+      return 'HUMAN';
+    default:
+      return 'RISK';
+  }
+};
+
 const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onAlertClick, onAcknowledge }) => {
   const [expandedAlertId, setExpandedAlertId] = useState<string | null>(null);
 
-  const getSeverityClass = (severity: string) => {
-    return `severity-${severity.toLowerCase()}`;
-  };
-
-  const getSeverityEmoji = (severity: string) => {
-    switch (severity.toLowerCase()) {
-      case 'critical':
-        return '🔴';
-      case 'high':
-        return '🟠';
-      case 'medium':
-        return '🟡';
-      case 'low':
-        return '🟢';
-      default:
-        return '⚠️';
-    }
-  };
-
-  const getThreatIcon = (threatType: string) => {
-    switch (threatType.toLowerCase()) {
-      case 'railway':
-        return '🚆';
-      case 'village':
-      case 'human_conflict':
-        return '👥';
-      default:
-        return '⚠️';
-    }
-  };
-
   const toggleExpand = (alertId: string) => {
-    setExpandedAlertId(expandedAlertId === alertId ? null : alertId);
+    setExpandedAlertId((current) => (current === alertId ? null : alertId));
   };
 
   return (
     <div className="alert-panel">
-      <h2>Active Alerts ({alerts.length})</h2>
+      <div className="surface-card__header surface-card__header--tight">
+        <div>
+          <span className="section-kicker">Incident queue</span>
+          <h2>Active alerts</h2>
+        </div>
+        <p>{alerts.length} incidents awaiting review or acknowledgement.</p>
+      </div>
+
       {alerts.length === 0 ? (
-        <p className="no-alerts">No active alerts</p>
+        <div className="empty-state">No active alerts at the moment.</div>
       ) : (
-        <ul className="alert-list">
-          {alerts.map((alert) => (
-            <li
-              key={alert.id}
-              className={`alert-item ${getSeverityClass(alert.severity)}`}
-            >
-              <div 
-                className="alert-header"
-                onClick={() => toggleExpand(alert.id)}
-                style={{ cursor: 'pointer' }}
+        <div className="alert-list">
+          {alerts.map((alert) => {
+            const severity = alert.severity.toLowerCase();
+            const expanded = expandedAlertId === alert.id;
+
+            return (
+              <article
+                key={alert.id}
+                className={`alert-card alert-card--${severity}`}
+                onClick={() => {
+                  toggleExpand(alert.id);
+                  onAlertClick?.(alert);
+                }}
               >
-                <span className="alert-icon">{getThreatIcon(alert.threat_type)}</span>
-                <div className="alert-title-section">
-                  <span className="alert-threat">{alert.threat_type.replace('_', ' ').toUpperCase()}</span>
-                  <span className="alert-animal"> • {alert.species} {alert.animal_id}</span>
-                </div>
-                <span className={`alert-severity ${getSeverityClass(alert.severity)}`}>
-                  {getSeverityEmoji(alert.severity)} {alert.severity}
-                </span>
-              </div>
-
-              <div className="alert-body">
-                <p className="alert-description">{alert.description}</p>
-                
-                <div className="alert-metrics">
-                  <div className="metric">
-                    <span className="metric-label">Risk Score:</span>
-                    <span className="metric-value">{alert.risk_score}/100</span>
+                <div className="alert-card__topline">
+                  <span className="alert-badge">{threatIcon(alert.threat_type)}</span>
+                  <div className="alert-card__title">
+                    <strong>{threatLabel(alert.threat_type)}</strong>
+                    <span>
+                      {alert.species || 'Unknown species'} · {alert.animal_id}
+                    </span>
                   </div>
-                  {alert.gps_location && (
-                    <div className="metric">
-                      <span className="metric-label">Location:</span>
-                      <span className="metric-value">
-                        {alert.gps_location.latitude.toFixed(4)}°, {alert.gps_location.longitude.toFixed(4)}°
-                      </span>
-                    </div>
-                  )}
+                  <span className={`severity-tag severity-tag--${severity}`}>{alert.severity}</span>
                 </div>
 
-                <div className="alert-confirmations">
-                  {alert.cctv_confirmed && (
-                    <span className="confirmation cctv">✓ CCTV Confirmed</span>
-                  )}
-                  {alert.anomaly_detected && (
-                    <span className="confirmation anomaly">✓ Anomaly Detected</span>
-                  )}
+                <p className="alert-card__description">{alert.description}</p>
+
+                <div className="alert-meta">
+                  <div className="alert-meta__item">
+                    <span>Risk score</span>
+                    <strong>{alert.risk_score}/100</strong>
+                  </div>
+                  <div className="alert-meta__item">
+                    <span>Created</span>
+                    <strong>{new Date(alert.created_at).toLocaleTimeString()}</strong>
+                  </div>
                 </div>
 
-                {expandedAlertId === alert.id && (
-                  <div className="alert-details">
-                    {alert.investigation_summary && (
-                      <div className="investigation-section">
-                        <h4>Investigation Summary</h4>
-                        <p>{alert.investigation_summary}</p>
-                      </div>
-                    )}
-                    <div className="alert-info">
-                      <p><strong>Status:</strong> {alert.status}</p>
-                      <p><strong>Created:</strong> {new Date(alert.created_at).toLocaleString()}</p>
-                    </div>
+                {(alert.cctv_confirmed || alert.anomaly_detected) && (
+                  <div className="signal-row">
+                    {alert.cctv_confirmed ? <span className="signal-pill">CCTV confirmed</span> : null}
+                    {alert.anomaly_detected ? <span className="signal-pill">Anomaly detected</span> : null}
                   </div>
                 )}
-              </div>
 
-              <div className="alert-footer">
-                <small>{new Date(alert.created_at).toLocaleTimeString()}</small>
-                {alert.status === 'DETECTED' && (
+                {expanded ? (
+                  <div className="alert-card__details">
+                    {alert.gps_location ? (
+                      <p>
+                        Location: {alert.gps_location.latitude.toFixed(4)}, {alert.gps_location.longitude.toFixed(4)}
+                      </p>
+                    ) : null}
+                    {alert.investigation_summary ? <p>{alert.investigation_summary}</p> : null}
+                    <p>Status: {alert.status}</p>
+                    <p>Logged: {new Date(alert.created_at).toLocaleString()}</p>
+                  </div>
+                ) : null}
+
+                <div className="alert-card__footer">
                   <button
-                    className="acknowledge-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAcknowledge?.(alert.id);
+                    type="button"
+                    className="ghost-btn"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      toggleExpand(alert.id);
                     }}
                   >
-                    Acknowledge
+                    {expanded ? 'Hide details' : 'View details'}
                   </button>
-                )}
-                <button
-                  className="expand-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleExpand(alert.id);
-                  }}
-                >
-                  {expandedAlertId === alert.id ? '▼' : '▶'}
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+                  {alert.status === 'DETECTED' ? (
+                    <button
+                      type="button"
+                      className="primary-btn"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onAcknowledge?.(alert.id);
+                      }}
+                    >
+                      Acknowledge
+                    </button>
+                  ) : null}
+                </div>
+              </article>
+            );
+          })}
+        </div>
       )}
     </div>
   );
 };
 
 export default AlertPanel;
+
