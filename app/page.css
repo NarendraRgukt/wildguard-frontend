@@ -589,3 +589,38 @@ a {
   .animal-details__hero, .alert-card__topline, .alert-card__footer, .alert-meta { align-items: stretch; flex-direction: column; }
 }
 
+
+.simulation-control {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+.simulate-button {
+  padding: 9px 13px;
+  border: 1px solid rgba(87, 221, 191, 0.46);
+  border-radius: 9px;
+  color: #06251f;
+  font-size: 0.87rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: #75dfc9;
+}
+
+.simulate-button:hover:not(:disabled) {
+  background: #a1f0de;
+}
+
+.simulate-button:disabled {
+  color: #bff8e8;
+  cursor: not-allowed;
+  background: rgba(15, 159, 136, 0.28);
+}
+
+.simulation-message {
+  max-width: 190px;
+  color: #bff8e8;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  text-align: right;
+}

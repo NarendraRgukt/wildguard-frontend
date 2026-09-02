@@ -6,7 +6,7 @@ import Link from 'next/link';
 import AnimalMarker from './components/AnimalMarker';
 import AnimalDetails from './components/AnimalDetails';
 import AlertPanel from './components/AlertPanel';
-import { animalsAPI, gpsAPI, alertsAPI } from './services/api';
+import { animalsAPI, gpsAPI, alertsAPI, simulationAPI } from './services/api';
 import './page.css';
 
 const Map = dynamic(() => import('./components/Map'), { ssr: false });
@@ -54,6 +54,15 @@ export default function Home() {
   const [positions, setPositions] = useState<Record<string, GPSEvent | null>>({});
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [simulationRunning, setSimulationRunning] = useState(false);
+  const [simulationStarting, setSimulationStarting] = useState(false);
+  const [simulationMessage, setSimulationMessage] = useState('');
+
+  useEffect(() => {
+    simulationAPI.getStatus()
+      .then((response) => setSimulationRunning(Boolean(response.data.running)))
+      .catch((error) => console.warn('Failed to fetch simulation status:', error));
+  }, []);
 
   useEffect(() => {
     const fetchAnimals = async () => {
@@ -156,6 +165,21 @@ export default function Home() {
     }
   };
 
+  const handleStartSimulation = async () => {
+    setSimulationStarting(true);
+    setSimulationMessage('');
+    try {
+      const response = await simulationAPI.start();
+      setSimulationRunning(Boolean(response.data.running));
+      setSimulationMessage(response.data.message || 'Animal simulation started');
+    } catch (error) {
+      console.error('Failed to start simulation:', error);
+      setSimulationMessage('Could not start the simulation. Confirm the backend is running.');
+    } finally {
+      setSimulationStarting(false);
+    }
+  };
+
   const metrics = useMemo(() => {
     const activeAnimals = animals.filter((animal) => animal.status.toLowerCase() === 'active').length;
     const criticalAlerts = alerts.filter((alert) => alert.severity.toLowerCase() === 'critical').length;
@@ -193,7 +217,12 @@ export default function Home() {
               Animal Registry
             </Link>
           </nav>
-          <div className="status-chip">Live monitoring</div>
+          <div className="simulation-control">
+            <button type="button" className="simulate-button" onClick={handleStartSimulation} disabled={simulationRunning || simulationStarting}>
+              {simulationStarting ? 'Starting...' : simulationRunning ? 'Simulation running' : 'Simulate animals'}
+            </button>
+            {simulationMessage && <span className="simulation-message" role="status">{simulationMessage}</span>}
+          </div>
         </div>
       </section>
 
@@ -370,5 +399,3 @@ function AlertMarkerManager({ map, alerts }: { map: any; alerts: Alert[] }) {
   useAlertMarkers(map, alerts);
   return null;
 }
-
-

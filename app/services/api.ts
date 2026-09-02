@@ -1,6 +1,12 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// `next dev` uses the local Flask server; production builds use the Render API.
+// Set NEXT_PUBLIC_API_URL in Vercel to override either value when needed.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || (
+  process.env.NODE_ENV === 'production'
+    ? 'https://wildguard-backend-acu5.onrender.com/api'
+    : 'http://localhost:5000/api'
+);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -25,6 +31,11 @@ export const gpsAPI = {
   getLatest: (animalId: string) => api.get(`/gps/animal/${animalId}/latest`),
   getHistory: (animalId: string, opts?: { limit?: number; start?: string; end?: string }) => 
     api.get(`/gps/animal/${animalId}/history`, { params: opts })
+};
+
+export const simulationAPI = {
+  getStatus: () => api.get('/simulation'),
+  start: () => api.post('/simulation/start')
 };
 
 // Alerts API
